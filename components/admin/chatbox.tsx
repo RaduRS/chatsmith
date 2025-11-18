@@ -73,7 +73,7 @@ export default function ChatBox({ chatbotId, botName, apiKey }: { chatbotId: str
         {messages.map((m, i) => (
           <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
             <div className={m.role === 'user' ? 'max-w-[80%] rounded-2xl bg-black text-white px-3 py-2' : 'max-w-[80%] rounded-2xl bg-gray-100 text-gray-900 px-3 py-2'}>
-              <div className="text-xs opacity-70 mb-1">{m.role === 'user' ? 'You' : botName || 'Assistant'}</div>
+              <div className="text-xs opacity-70 mb-1">{m.role === 'user' ? 'User' : botName || 'Assistant'}</div>
               {m.role === 'assistant' && !m.content && loading && i === messages.length - 1 ? (
                 <div className="py-1"><TypingDots /></div>
               ) : (
