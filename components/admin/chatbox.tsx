@@ -6,7 +6,7 @@ import { Markdown } from '@/components/ui/markdown'
 
 type ChatItem = { role: 'user' | 'assistant'; content: string }
 
-export default function ChatBox({ chatbotId, botName }: { chatbotId: string; botName?: string }) {
+export default function ChatBox({ chatbotId, botName, apiKey }: { chatbotId: string; botName?: string; apiKey?: string }) {
   const [messages, setMessages] = useState<ChatItem[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -44,7 +44,7 @@ export default function ChatBox({ chatbotId, botName }: { chatbotId: string; bot
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chatbot_id: chatbotId, message: userMsg.content, history: messages.slice(-8) })
+      body: JSON.stringify({ chatbot_id: chatbotId, api_key: apiKey, message: userMsg.content, history: messages.slice(-8) })
     })
     const reader = res.body?.getReader()
     const decoder = new TextDecoder()

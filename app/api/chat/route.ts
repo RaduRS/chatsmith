@@ -6,6 +6,7 @@ import OpenAI from "openai";
 type ChatHistoryItem = { role: "user" | "assistant"; content: string };
 type ChatRequest = {
   chatbot_id: string;
+  api_key?: string;
   message: string;
   history?: ChatHistoryItem[];
 };
@@ -32,7 +33,7 @@ function userMsg(
 
 export async function POST(req: Request) {
   const body = (await req.json()) as ChatRequest;
-  const { chatbot_id, message, history } = body;
+  const { chatbot_id, api_key, message, history } = body;
   if (!chatbot_id || !message)
     return NextResponse.json(
       { error: "chatbot_id and message required" },
@@ -47,6 +48,18 @@ export async function POST(req: Request) {
     .single();
   if (cbErr || !chatbot)
     return NextResponse.json({ error: "chatbot not found" }, { status: 404 });
+
+  if (!api_key)
+    return NextResponse.json({ error: "api_key required" }, { status: 401 });
+  const { data: clientRow, error: clErr } = await supabase
+    .from("clients")
+    .select("id, api_key")
+    .eq("api_key", api_key)
+    .single();
+  if (clErr || !clientRow)
+    return NextResponse.json({ error: "invalid api_key" }, { status: 403 });
+  if (clientRow.id !== chatbot.client_id)
+    return NextResponse.json({ error: "api_key does not match chatbot" }, { status: 403 });
 
   const lowerMsg = message.toLowerCase().trim();
   const overviewIntent =
@@ -108,7 +121,7 @@ export async function POST(req: Request) {
   }
   if (broadIntent && context) context = context.slice(0, 2000)
 
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const model = chatModel;
   const limitedHistory: ChatHistoryItem[] = Array.isArray(history)
     ? history.slice(-8)
@@ -188,7 +201,7 @@ export async function POST(req: Request) {
   } = { model, messages };
   if (supportsCustomTemperature) baseParams.temperature = 0.5;
   if (streaming) {
-    const stream = await client.chat.completions.create({
+    const stream = await openai.chat.completions.create({
       ...baseParams,
       stream: true,
     });
@@ -227,7 +240,7 @@ export async function POST(req: Request) {
       },
     });
   } else {
-    const completion = await client.chat.completions.create(baseParams);
+    const completion = await openai.chat.completions.create(baseParams);
     const answer = completion.choices?.[0]?.message?.content ?? "";
     const conversationMessages = [
       ...limitedHistory,

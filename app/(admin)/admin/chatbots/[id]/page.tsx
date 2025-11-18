@@ -9,6 +9,7 @@ import DocumentsTable from '@/components/admin/documents-table'
 export default async function ChatbotDetailPage({ params }: { params: { id: string } }) {
   const supabase = createServiceClient()
   const { data: chatbot } = await supabase.from('chatbots').select('*').eq('id', params.id).single()
+  const { data: client } = chatbot ? await supabase.from('clients').select('id,api_key').eq('id', chatbot.client_id).single() : { data: null }
   const { count: docCount } = await supabase.from('documents').select('*', { count: 'exact', head: true }).eq('chatbot_id', params.id)
   const { count: convoCount } = await supabase.from('conversations').select('*', { count: 'exact', head: true }).eq('chatbot_id', params.id)
   const { data: documents } = await supabase.from('documents').select('id,filename,created_at').eq('chatbot_id', params.id).order('created_at', { ascending: false })
@@ -55,7 +56,7 @@ export default async function ChatbotDetailPage({ params }: { params: { id: stri
       </div>
       <Card className="p-6">
         <div className="text-lg font-semibold mb-4">Chat</div>
-        <ChatBox chatbotId={params.id} botName={chatbot?.name} />
+        <ChatBox chatbotId={params.id} botName={chatbot?.name} apiKey={client?.api_key} />
       </Card>
       <Card className="p-6">
         <div className="text-lg font-semibold mb-4">Documents</div>
